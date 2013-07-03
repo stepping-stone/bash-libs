@@ -72,6 +72,20 @@ function info ()
     logAndPrint "[INFO] ${message}" "$tag" 'info' 'user'
 }
 
+function warn ()
+{
+    local message="$1"
+    local tag="$2"
+
+    if [ -z "${tag}" ]; then
+        local tag="${SYSLOG_TAG}"
+    fi
+
+    logAndPrint "[WARNING] ${message}" "$tag" 'warning' 'user'
+
+}
+
+
 function error ()
 {
     local message="$1"
