@@ -344,6 +344,25 @@ function iptablesIsNatAvailable() {
     return $?
 }
 
+# checks if a given rule is already present in a given chain
+# iptablesIsRulePresent "test_chain" "-s 10.1.1.1 -j test_chain2"
+function iptablesIsRulePresent() {
+    local chain="$1"
+    local rule="$2"
+    local table="$3"
+
+    if [ "$table" == "" ]; then
+        local table="filter"
+    fi
+
+    # Check if the rule is already present
+    # do not put $rule into surrounding quotes
+    $IPTABLES_CMD -t "$table" -C "$chain" $rule > /dev/null 2>&1
+
+    return 0
+
+}
+
 # insert a rule into a given chain, if it's not already present
 # iptablesInsertRuleIfNotPresent "test_chain" "-s 10.1.1.1 -j test_chain2"
 function iptablesInsertRuleIfNotPresent() {
@@ -356,15 +375,7 @@ function iptablesInsertRuleIfNotPresent() {
     fi
 
     # Check if the rule is already present
-    # Note that the appending whitespace befor the line ending is intentional
-    # as the IPTABLES_CMD -S output appends it.
-    # This might change with further iptable versions :(
-    # ^-A $chain $rule $"
-    #                ^^^
-    # The above isn't true for kernel >= 3.0
-    # @ToDo: Check for kernel version and decide if a whitespace is required
-    if ! $IPTABLES_CMD -t $table -S $chain | ${GREP_CMD} -q -E -- "^-A $chain $rule$";
-    then
+    if ! iptablesIsRulePresent"$chain" "$rule" "$table"; then
         # do not put $rule into surrounding quotes
         $IPTABLES_CMD -t $table -I $chain $rule
         return $?
@@ -376,26 +387,18 @@ function iptablesInsertRuleIfNotPresent() {
 # append a rule into a given chain, if it's not already present
 # iptablesAppendRuleIfNotPresent "test_chain" "-s 10.1.1.1 -j test_chain2"
 function iptablesAppendRuleIfNotPresent() {
-    local chain=$1
-    local rule=$2
-    local table=$3
+    local chain="$1"
+    local rule="$2"
+    local table="$3"
 
     if [ "$table" == "" ]; then
         local table="filter"
     fi
 
     # Check if the rule is already present
-    # Note that the appending whitespace befor the line ending is intentional
-    # as the IPTABLES_CMD -S output appends it.
-    # This might change with further iptable versions :(
-    # ^-A $chain $rule $"
-    #                ^^^
-    # The above isn't true for kernel >= 3.0
-    # @ToDo: Check for kernel version and decide if a whitespace is required
-    if ! $IPTABLES_CMD -t $table -S $chain | ${GREP_CMD} -q -E -- "^-A $chain $rule$";
-    then
+    if ! iptablesIsRulePresent"$chain" "$rule" "$table"; then
         # do not put $rule into surrounding quotes
-        $IPTABLES_CMD -t $table -A $chain $rule
+        $IPTABLES_CMD -t "$table" -A "$chain" $rule
         return $?
     fi
 
@@ -405,24 +408,16 @@ function iptablesAppendRuleIfNotPresent() {
 # Removes a rule from a given chain, if it exists
 # iptablesDeleteRuleIfPresent "test_chain" "-s 10.1.1.1 -j test_chain2"
 function iptablesDeleteRuleIfPresent() {
-    local chain=$1
-    local rule=$2
-    local table=$3
+    local chain="$1"
+    local rule="$2"
+    local table="$3"
 
     if [ "$table" == "" ]; then
         local table="filter"
     fi
 
     # Check if the rule is already present
-    # Note that the appending whitespace befor the line ending is intentional
-    # as the IPTABLES_CMD -S output appends it.
-    # This might change with further iptable versions :(
-    # ^-A $chain $rule $"
-    #                ^^^
-    # The above isn't true for kernel >= 3.0
-    # @ToDo: Check for kernel version and decide if a whitespace is required
-    if $IPTABLES_CMD -t "$table" -S "$chain" | ${GREP_CMD} -q -E -- "^-A $chain $rule$";
-    then
+    if iptablesIsRulePresent"$chain" "$rule" "$table"; then
         # do not put $rule into surrounding quotes
         $IPTABLES_CMD --table "$table" --delete "$chain" $rule
         return $?
