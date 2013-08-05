@@ -33,7 +33,7 @@
 # The default value only works if not sourced or executed from within $PATH
 LIB_DIR=${LIB_DIR:="$(readlink -f ${0%/*})"}
 
-LOGGER_CMD=${LOGGER_CMD:='/usr/bin/logger'}
+LOGGER_CMD="${LOGGER_CMD:="/usr/bin/logger"}"
 
 
 function syslog ()

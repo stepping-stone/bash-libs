@@ -33,9 +33,9 @@
 # The default value only works if not sourced or executed from within $PATH
 LIB_DIR=${LIB_DIR:="$(readlink -f ${0%/*})"}
 
-IPTABLES_CMD="${IPTABLES_CMD:='/sbin/iptables'}"
-DATE_CMD="${DATE_CMD:='/bin/date'}"
-GREP_CMD="${GREP_CMD:='/bin/grep'}"
+IPTABLES_CMD="${IPTABLES_CMD:="/sbin/iptables"}"
+DATE_CMD="${DATE_CMD:="/bin/date"}"
+GREP_CMD="${GREP_CMD:="/bin/grep"}"
 
 HASHLIMIT_PROC_DIR="/proc/net/ipt_hashlimit"
 
@@ -434,7 +434,7 @@ function iptablesDeleteRuleIfPresent() {
 # checks if a given chain is present/created
 # iptablesIsChainPresent "test_chain"
 function iptablesIsChainPresent() {
-    local chain=$1
+    local chain="$1"
     local table="$2"
 
     if [ "$table" == "" ]; then
