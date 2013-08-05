@@ -358,26 +358,25 @@ function iptablesIsRulePresent() {
     # Check if the rule is already present
     # do not put $rule into surrounding quotes
     $IPTABLES_CMD -t "$table" -C "$chain" $rule > /dev/null 2>&1
-
-    return 0
+    return $?
 
 }
 
 # insert a rule into a given chain, if it's not already present
 # iptablesInsertRuleIfNotPresent "test_chain" "-s 10.1.1.1 -j test_chain2"
 function iptablesInsertRuleIfNotPresent() {
-    local chain=$1
-    local rule=$2
-    local table=$3
+    local chain="$1"
+    local rule="$2"
+    local table="$3"
 
     if [ "$table" == "" ]; then
         local table="filter"
     fi
 
     # Check if the rule is already present
-    if ! iptablesIsRulePresent"$chain" "$rule" "$table"; then
+    if ! iptablesIsRulePresent "$chain" "$rule" "$table"; then
         # do not put $rule into surrounding quotes
-        $IPTABLES_CMD -t $table -I $chain $rule
+        $IPTABLES_CMD -t "$table" -I "$chain" $rule
         return $?
     fi
 
@@ -396,7 +395,7 @@ function iptablesAppendRuleIfNotPresent() {
     fi
 
     # Check if the rule is already present
-    if ! iptablesIsRulePresent"$chain" "$rule" "$table"; then
+    if ! iptablesIsRulePresent "$chain" "$rule" "$table"; then
         # do not put $rule into surrounding quotes
         $IPTABLES_CMD -t "$table" -A "$chain" $rule
         return $?
@@ -417,7 +416,7 @@ function iptablesDeleteRuleIfPresent() {
     fi
 
     # Check if the rule is already present
-    if iptablesIsRulePresent"$chain" "$rule" "$table"; then
+    if iptablesIsRulePresent "$chain" "$rule" "$table"; then
         # do not put $rule into surrounding quotes
         $IPTABLES_CMD --table "$table" --delete "$chain" $rule
         return $?
