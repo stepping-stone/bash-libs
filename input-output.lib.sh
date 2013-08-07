@@ -37,6 +37,9 @@ source "${LIB_DIR}/syslog.lib.sh"
 
 BASENAME_CMD=${BASENAME_CMD:="/usr/bin/basename"}
 
+IO_LOG="${IO_LOG:="yes"}"
+IO_PRINT="${IO_PRINT:="yes"}"
+
 SYSLOG_TAG="${SYSLOG_TAG:="$(${BASENAME_CMD} ${0})"}" # defaults to the name of the script
 
 DEBUG=${DEBUG:='no'}
@@ -49,14 +52,18 @@ function logAndPrint ()
     local level="$3"
     local facility="$4"
 
-    if [ "${level}" = 'err' ]; then
-        # write to STDERR on messages with an error level
-        echo "$message" >&2
-    else
-        echo "$message"
+    if [ "${IO_PRINT}" = 'yes' ]; then
+        if [ "${level}" = 'err' ]; then
+            # write to STDERR on messages with an error level
+            echo "$message" >&2
+        else
+            echo "$message"
+        fi
     fi
 
-    syslog "${message}" "${tag}" "${level}" "${facility}"
+    if [ "${IO_LOG}" = 'yes' ]; then
+        syslog "${message}" "${tag}" "${level}" "${facility}"
+    fi
 }
 
 
