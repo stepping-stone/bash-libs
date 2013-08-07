@@ -52,6 +52,10 @@ function logAndPrint ()
     local level="$3"
     local facility="$4"
 
+    if [ -z "${tag}" ]; then
+        local tag="${SYSLOG_TAG}"
+    fi
+
     if [ "${IO_PRINT}" = 'yes' ]; then
         if [ "${level}" = 'err' ]; then
             # write to STDERR on messages with an error level
@@ -72,10 +76,6 @@ function info ()
     local message="$1"
     local tag="$2"
 
-    if [ -z "${tag}" ]; then
-        local tag="${SYSLOG_TAG}"
-    fi
-
     logAndPrint "[INFO] ${message}" "$tag" 'info' 'user'
 }
 
@@ -84,12 +84,7 @@ function warn ()
     local message="$1"
     local tag="$2"
 
-    if [ -z "${tag}" ]; then
-        local tag="${SYSLOG_TAG}"
-    fi
-
     logAndPrint "[WARNING] ${message}" "$tag" 'warning' 'user'
-
 }
 
 
@@ -98,22 +93,13 @@ function error ()
     local message="$1"
     local tag="$2"
 
-    if [ -z "${tag}" ]; then
-        local tag="${SYSLOG_TAG}"
-    fi
-
     logAndPrint "[ERROR] ${message}" "$tag" 'err' 'user'
-
 }
 
 function die ()
 {
     local message="$1"
     local tag="$2"
-
-    if [ -z "${tag}" ]; then
-        local tag="${SYSLOG_TAG}"
-    fi
 
     logAndPrint "[DIE] ${message}" "$tag" 'emerg' 'user'
     exit 1
@@ -126,10 +112,6 @@ function debug ()
 
     if [ "$DEBUG" != "yes" ]; then
         return 0
-    fi
-
-    if [ -z "${tag}" ]; then
-        local tag="${SYSLOG_TAG}"
     fi
 
     logAndPrint "[DEBUG] ${message}" "$tag" 'debug' 'user'
