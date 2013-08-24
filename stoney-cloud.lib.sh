@@ -38,7 +38,7 @@ SC_LDAP_BIND_DN="${SC_LDAP_BIND_DN-"cn=Manager,dc=foss-cloud,dc=org"}"
 SC_LDAP_BIND_PASSWORD_FILE="${SC_LDAP_BIND_PASSWORD_FILE-"please-create-me.ldappass"}"
 SC_LDAP_BASE_DN="${SC_LDAP_BASE_DN-"dc=foss-cloud,dc=org"}"
 SC_LDAP_URI="${SC_LDAP_URI-"ldap://localhost"}"
-SC_LDAP_VIRTUAL_MACHINES_BASE_DN="${SC_LDAP_VIRTUAL_MACHINES_BASE_DN-"ou=virtual machines,ou=virtualization,ou=services,${SC_LDAP_BASE_DN}"}"
+SC_LDAP_VIRTUAL_MACHINES_SUBTREE="${SC_LDAP_VIRTUAL_MACHINES_SUBTREE-"ou=virtual machines,ou=virtualization,ou=services"}"
 
 declare -A SC_VM_HOST_NAME
 declare -A SC_VM_DOMAIN_NAME
@@ -88,7 +88,7 @@ function scLdapGetVmLdifByUuid ()
 {
     local uuid="$1"
 
-    scLdapSearch "${SC_LDAP_VIRTUAL_MACHINES_BASE_DN}" \
+    scLdapSearch "${SC_LDAP_VIRTUAL_MACHINES_SUBTREE},${SC_LDAP_BASE_DN}" \
                  "one" \
                  "(sstVirtualMachine=${uuid})" \
                  "${@:2}"
