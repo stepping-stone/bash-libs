@@ -98,6 +98,28 @@ function scLdapGetVmLdifByUuid ()
 }
 
 
+# Performs an LDAP search for a VMs operating system informations and prints
+# the corresponding LDIF to STDOUT
+#
+# The desired LDAP attributes can be optionally passed, otherwise it returns
+# all the attributes.
+#
+# scLdapGetVmOperatingSystemLdifByUuid \
+#     <UUID> [<ATTRIBUTE-1>[ <ATTRIBUTE-2>[ <ATTRIBUTE-N>]]]
+function scLdapGetVmOperatingSystemLdifByUuid ()
+{
+    local uuid="$1"
+
+    scLdapSearch \
+        "sstVirtualMachine=${uuid},${SC_LDAP_VIRTUAL_MACHINES_BASE_DN}" \
+        "one" \
+        "(ou=operating system)" \
+        "${@:2}"
+
+    return $?
+}
+
+
 # Loads the VM related informations, referenced by it's UUID from the LDAP
 # directroy and populates the various SC_VM_* arrays which use the VM's UUID
 # as the array key for referencing the value.
@@ -141,11 +163,65 @@ function scLdapLoadVmInfoByUuid ()
     return 0
 }
 
+
+# Loads the VM related operating system informations, referenced by it's UUID
+# from the LDAP directroy and populates the various SC_VM_* arrays which use
+# the VM's UUID as the array key for referencing the value.
+#
+# scLdapLoadVmOperatingSystemInfoByUuid <UUID>
+function scLdapLoadVmOperatingSystemInfoByUuid ()
+{
+    local uuid="$1"
+    local attributes="sstOperatingSystem
+                      sstOperatingSystemType
+                      sstOperatingSystemVersion"
+
+    local ldif
+    ldif="$( scLdapGetVmOperatingSystemLdifByUuid "${uuid}" "${attributes}" 2>&1)"
+
+    local returnValue="$?"
+
+    if [ $returnValue -ne 0 ]; then
+        error "LDAP search for VM UUID '${uuid}' failed: ${ldif}"
+        return $returnValue
+    fi
+
+    SC_VM_OPERATING_SYSTEM[${uuid}]="$( \
+        ldapGetAttributeValueFromLdif "sstOperatingSystem" <<< "$ldif" )"
+
+    SC_VM_OPERATING_SYSTEM_TYPE[${uuid}]="$( \
+        ldapGetAttributeValueFromLdif "sstOperatingSystemType" <<< "$ldif" )"
+
+    SC_VM_OPERATING_SYSTEM_VERSION[${uuid}]="$( \
+        ldapGetAttributeValueFromLdif "sstOperatingSystemVersion" <<< "$ldif" )"
+
+    return 0
+}
+
+
 # Loads the VM related informations, referenced by it's UUID and populates
 # the various SC_VM_* arrays
+#
+# This function merely serves as a "database abstraction layer" without any
+# logic at the moment. This allows one to implement different data storages
+# in the future, without having to change the dependent code.
 #
 # scLoadVmInfoByUuid <UUID>
 function scLoadVmInfoByUuid ()
 {
     scLdapLoadVmInfoByUuid "$1"
+}
+
+
+# Loads the VM related operating system informations, referenced by it's UUID
+# and populates the various SC_VM_* arrays
+#
+# This function merely serves as a "database abstraction layer" without any
+# logic at the moment. This allows one to implement different data storages
+# in the future, without having to change the dependent code.
+#
+# scLoadVmOperatingSystemInfoByUuid <UUID>
+function scLoadVmOperatingSystemInfoByUuid
+{
+    scLdapLoadVmOperatingSystemInfoByUuid "$1"
 }
