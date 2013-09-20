@@ -109,9 +109,10 @@ function scLdapGetVmLdifByUuid ()
 function scLdapGetVmOperatingSystemLdifByUuid ()
 {
     local uuid="$1"
+    local baseDn="${SC_LDAP_VIRTUAL_MACHINES_SUBTREE},${SC_LDAP_BASE_DN}"
 
     scLdapSearch \
-        "sstVirtualMachine=${uuid},${SC_LDAP_VIRTUAL_MACHINES_BASE_DN}" \
+        "sstVirtualMachine=${uuid},${baseDn}" \
         "one" \
         "(ou=operating system)" \
         "${@:2}"
