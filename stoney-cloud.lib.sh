@@ -39,6 +39,7 @@ SC_LDAP_BIND_PASSWORD_FILE="${SC_LDAP_BIND_PASSWORD_FILE-"please-create-me.ldapp
 SC_LDAP_BASE_DN="${SC_LDAP_BASE_DN-"dc=foss-cloud,dc=org"}"
 SC_LDAP_URI="${SC_LDAP_URI-"ldap://localhost"}"
 SC_LDAP_VIRTUAL_MACHINES_SUBTREE="${SC_LDAP_VIRTUAL_MACHINES_SUBTREE-"ou=virtual machines,ou=virtualization,ou=services"}"
+SC_LDAP_DHCP_CONFIG_SUBTREE="${SC_LDAP_DHCP_CONFIG_SUBTREE-"cn=config-01,ou=dhcp,ou=networks,ou=virtualization,ou=services"}"
 
 declare -A SC_VM_HOST_NAME
 declare -A SC_VM_DOMAIN_NAME
@@ -115,6 +116,28 @@ function scLdapGetVmOperatingSystemLdifByUuid ()
         "sstVirtualMachine=${uuid},${baseDn}" \
         "one" \
         "(ou=operating system)" \
+        "${@:2}"
+
+    return $?
+}
+
+# Performs an LDAP search for a VMs DHCP configuration informations and prints
+# the corresponding LDIF to STDOUT
+#
+# The desired LDAP attributes can be optionally passed, otherwise it returns
+# all the attributes.
+#
+# scLdapGetVmOperatingSystemLdifByUuid \
+#     <UUID> [<ATTRIBUTE-1>[ <ATTRIBUTE-2>[ <ATTRIBUTE-N>]]]
+function scLdapGetVmDhcpConfigLdifByUuid ()
+{
+    local uuid="$1"
+    local baseDn="${SC_LDAP_DHCP_CONFIG_SUBTREE},${SC_LDAP_BASE_DN}"
+
+    scLdapSearch \
+        "${baseDn}" \
+        "sub" \
+        "(&(cn=${uuid})(objectClass=dhcpHost))" \
         "${@:2}"
 
     return $?
@@ -200,6 +223,37 @@ function scLdapLoadVmOperatingSystemInfoByUuid ()
 }
 
 
+# Loads the VM related DHCP configuration informations, referenced by it's UUID
+# from the LDAP directroy and populates the various SC_VM_* arrays which use
+# the VM's UUID as the array key for referencing the value.
+#
+# scLdapLoadVmDhcpConfigInfoByUuid <UUID>
+function scLdapLoadVmDhcpConfigInfoByUuid ()
+{
+    local uuid="$1"
+    local attributes="dhcpHWAddress
+                      dhcpStatements"
+
+    local ldif
+    ldif="$( scLdapGetVmDhcpConfigLdifByUuid "${uuid}" "${attributes}" 2>&1)"
+
+    local returnValue="$?"
+
+    if [ $returnValue -ne 0 ]; then
+        error "LDAP search for VM UUID '${uuid}' failed: ${ldif}"
+        return $returnValue
+    fi
+
+    SC_VM_DHCP_HW_ADDRESS[${uuid}]="$( \
+        ldapGetAttributeValueFromLdif "dhcpHWAddress" <<< "$ldif" )"
+
+    SC_VM_DHCP_STATEMENTS[${uuid}]="$( \
+        ldapGetAttributeValueFromLdif "dhcpStatements" <<< "$ldif" )"
+
+    return 0
+}
+
+
 # Loads the VM related informations, referenced by it's UUID and populates
 # the various SC_VM_* arrays
 #
@@ -225,4 +279,18 @@ function scLoadVmInfoByUuid ()
 function scLoadVmOperatingSystemInfoByUuid
 {
     scLdapLoadVmOperatingSystemInfoByUuid "$1"
+}
+
+
+# Loads the VM related DHCP configuration informations, referenced by it's UUID
+# and populates the various SC_VM_* arrays
+#
+# This function merely serves as a "database abstraction layer" without any
+# logic at the moment. This allows one to implement different data storages
+# in the future, without having to change the dependent code.
+#
+#  scLoadVmDhcpConfigInfoByUuid <UUID>
+function scLoadVmDhcpConfigInfoByUuid
+{
+    scLdapLoadVmDhcpConfigInfoByUuid "$1"
 }
