@@ -116,3 +116,37 @@ function debug ()
 
     logAndPrint "[DEBUG] ${message}" "$tag" 'debug' 'user'
 }
+
+# Reads lines from STDIN and logs those lines via the error or debug functions
+# in case the last exit status is non-zero or debugging was enabled.
+# The original exit status will be returned.
+#
+# It is up to the caller to redirect STDERR to STDOUT beforhand if this is
+# desired.
+#
+# Example: myCommand 2>&1 | logCommandOutputOnError
+function logCommandOutputOnError ()
+{
+    local commandExitStatus="$?"
+    local tag="$1"
+
+    if [ ${commandExitStatus} -eq 0 ] || [ "$DEBUG" != "yes" ]; then
+        # Logging is not desired.
+        return ${commandExitStatus}
+    fi
+    
+
+    local message=''
+
+    while read output; do
+        local message+="${output}"
+    done
+
+    if [ ${commandExitStatus} -ne 0 ]; then
+        error "$message" "$tag"
+    else
+        debug "$message" "$tag"
+    fi
+
+    return ${commandExitStatus}
+}
