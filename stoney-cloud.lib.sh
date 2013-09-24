@@ -34,6 +34,8 @@ LIB_DIR=${LIB_DIR:="$(readlink -f ${0%/*})"}
 
 source "${LIB_DIR}/ldap.lib.sh"
 
+GREP_CMD="${GREP_CMD:="/bin/grep"}"
+
 SC_LDAP_BIND_DN="${SC_LDAP_BIND_DN-"cn=Manager,dc=foss-cloud,dc=org"}"
 SC_LDAP_BIND_PASSWORD_FILE="${SC_LDAP_BIND_PASSWORD_FILE-"please-create-me.ldappass"}"
 SC_LDAP_BASE_DN="${SC_LDAP_BASE_DN-"dc=foss-cloud,dc=org"}"
@@ -249,6 +251,17 @@ function scLdapLoadVmDhcpConfigInfoByUuid ()
 
     SC_VM_DHCP_STATEMENTS[${uuid}]="$( \
         ldapGetAttributeValueFromLdif "dhcpStatements" <<< "$ldif" )"
+
+    SC_VM_DHCP_IP_ADDRESS[${uuid}]=''
+
+    local dhcpStatement=''
+    for dhcpStatement in ${SC_VM_DHCP_STATEMENTS[${vmUuid}]}; do
+        if [ ${GREP_CMD} -q -E '^fixed-address ' <<< "${dhcpStatement}" ]; then
+            # Extract the IP address from the 'fixed-address 192.0.2.3' string.
+            SC_VM_DHCP_IP_ADDRESS[${uuid}]="${dhcpStatement/* /}"
+        fi
+    done
+
 
     return 0
 }
