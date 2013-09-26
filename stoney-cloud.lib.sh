@@ -50,6 +50,15 @@ declare -A SC_VM_MIGRATION_NODE_NAME
 declare -A SC_VM_SPICE_PORT
 declare -A SC_VM_MIGRATION_SPICE_PORT
 
+declare -A SC_VM_OPERATING_SYSTEM
+declare -A SC_VM_OPERATING_SYSTEM_TYPE
+declare -A SC_VM_OPERATING_SYSTEM_VERSION
+
+declare -A SC_VM_DHCP_HW_ADDRESS
+declare -A SC_VM_DHCP_STATEMENTS
+declare -A SC_VM_DHCP_IP_ADDRESS
+
+
 
 # Performs an LDAP search and prints the LDIF output to STDOUT.
 # 
@@ -212,8 +221,10 @@ function scLdapLoadVmOperatingSystemInfoByUuid ()
         return $returnValue
     fi
 
-    SC_VM_OPERATING_SYSTEM[${uuid}]="$( \
-        ldapGetAttributeValueFromLdif "sstOperatingSystem" <<< "$ldif" )"
+    debug "scLdapLoadVmOperatingSystemInfoByUuid LDIF:"
+    debug "$ldif"
+
+    SC_VM_OPERATING_SYSTEM[${uuid}]="$( ldapGetAttributeValueFromLdif "sstOperatingSystem" <<< "$ldif" )"
 
     SC_VM_OPERATING_SYSTEM_TYPE[${uuid}]="$( \
         ldapGetAttributeValueFromLdif "sstOperatingSystemType" <<< "$ldif" )"
@@ -246,6 +257,9 @@ function scLdapLoadVmDhcpConfigInfoByUuid ()
         return $returnValue
     fi
 
+    debug "scLdapLoadVmDhcpConfigInfoByUuid LDIF:"
+    debug "$ldif"
+
     SC_VM_DHCP_HW_ADDRESS[${uuid}]="$( \
         ldapGetAttributeValueFromLdif "dhcpHWAddress" <<< "$ldif" )"
 
@@ -254,8 +268,11 @@ function scLdapLoadVmDhcpConfigInfoByUuid ()
 
     SC_VM_DHCP_IP_ADDRESS[${uuid}]=''
 
+    debug "dhcpStatements: ${SC_VM_DHCP_STATEMENTS[${vmUuid}]}"
+
     local dhcpStatement=''
-    for dhcpStatement in ${SC_VM_DHCP_STATEMENTS[${vmUuid}]}; do
+    for dhcpStatement in "${SC_VM_DHCP_STATEMENTS[${vmUuid}]}"; do
+        debug "dhcpStatement: ${dhcpStatement}"
         if [ ${GREP_CMD} -q -E '^fixed-address ' <<< "${dhcpStatement}" ]; then
             # Extract the IP address from the 'fixed-address 192.0.2.3' string.
             SC_VM_DHCP_IP_ADDRESS[${uuid}]="${dhcpStatement/* /}"
