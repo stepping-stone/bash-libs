@@ -72,42 +72,71 @@ function ldapSearch ()
 #
 # Multi-line values and multi-valued attributes aware.
 #
-# ldapGetAttributeValueFromLdif LdapAttribute
+# ldapGetAttributeValueFromLdif LdapAttribute [(TRUE|false)]
 function ldapGetAttributeValueFromLdif ()
 {
     local attribute="${1:-"dn"}"
+    local lookForMultiValuedAttribute=${2:-true}
+
+    local lookForAttributeLine=true
+    local lookForMultiLineValue=false
+    local ldifLine=""
     local value=""
 
-    while read; do
-        # No <NAME> was provided to the above read builtin, this prevents
-        # word-splitting, which would remove the trailing white space on
-        # multi-lined values
-        local ldifLine="$REPLY"
+    while true; do
+        while $lookForAttributeLine; do
+            # Check if it's a line starting with the desired attribute
+            if ${GREP_CMD} -E -q "^${attribute}: " <<< "$ldifLine"; then
+                # strip off the leading attribute name, for example: 'cn: '
+                value="${ldifLine/${attribute}: /}"
 
-        if [ "${value}" != "" ]; then
-
-            # Check for multi-line value (starting with a space) 
-            if [ "${ldifLine:0:1}" == " " ]; then
-                # Append it to the previous line without the trailing whitespace
-                local value+="${ldifLine:1}"
-            else
-               # We got the whole value, echo & reset it for multi-valued
-               # attributes
-               echo ${value}
-               local value=""
+                lookForMultiLineValue=true 
+                lookForAttributeLine=false
+                break # do not read again
+            fi
+            
+            # Read must be done after the attribute check, otherwise a
+            # (possible) existing ldifLine from the multi-line value loop
+            # below will be overwritten.
+            if ! read; then
+                # end of input reached
+                break 2 # exit
             fi
 
-        # Check if it's a line starting with an attribute
-        elif echo "${ldifLine}" | ${GREP_CMD} -E -q "^${attribute}: "; then
+            # No <NAME> was provided to the above read builtin, this prevents
+            # word-splitting, which would remove the trailing white space on
+            # multi-lined values. The current line is available in $REPLY.
+            ldifLine="$REPLY"
+        done
 
-            # strip off the trailing attribute name, for example: 'cn: '
-            local value="${ldifLine/${attribute}: /}"
-        fi
+        while $lookForMultiLineValue; do
+            if ! read; then
+                # end of input reached
+                if test -n "${value}"; then
+                    echo "${value}"
+                    value=""
+                fi
+                
+                break 2 # exit
+            fi
+
+            ldifLine="$REPLY"
+
+            # Check for multi-line value (a line starting with a space) 
+            if [ "${ldifLine:0:1}" == " " ]; then
+                # Append it to the previous line without the trailing whitespace
+                value+="${ldifLine:1}"
+            else
+                # Either no multi-line value or the last line of it.
+                echo "${value}"
+                value=''
+                lookForMultiLineValue=false
+                lookForAttributeLine=true
+
+                if ! $lookForMultiValuedAttribute; then
+                    break 2 # exit, no multi-valued attributes expected
+                fi
+            fi
+        done
     done
-
-    # If the attribute was found on the last LDIF line the above while loop
-    # has already terminated before the value was echoed
-    if [ "${value}" != "" ]; then
-        echo $value
-    fi
 }
