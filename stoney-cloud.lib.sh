@@ -178,22 +178,22 @@ function scLdapLoadVmInfoByUuid ()
     fi
 
     SC_VM_HOST_NAME[${uuid}]="$( \
-        ldapGetAttributeValueFromLdif "sstNetworkHostname" <<< "$ldif" )"
+        ldapGetAttributeValueFromLdif "sstNetworkHostname" false <<< "$ldif" )"
 
     SC_VM_DOMAIN_NAME[${uuid}]="$( \
-        ldapGetAttributeValueFromLdif "sstNetworkDomainName" <<< "$ldif" )"
+        ldapGetAttributeValueFromLdif "sstNetworkDomainName" false <<< "$ldif" )"
 
     SC_VM_NODE_NAME[${uuid}]="$( \
-        ldapGetAttributeValueFromLdif "sstNode" <<< "$ldif" )"
+        ldapGetAttributeValueFromLdif "sstNode" false <<< "$ldif" )"
 
     SC_VM_MIGRATION_NODE_NAME[${uuid}]="$( \
-        ldapGetAttributeValueFromLdif "sstMigrationNode" <<< "$ldif" )"
+        ldapGetAttributeValueFromLdif "sstMigrationNode" false <<< "$ldif" )"
 
     SC_VM_SPICE_PORT[${uuid}]="$( \
-        ldapGetAttributeValueFromLdif "sstSpicePort" <<< "$ldif" )"
+        ldapGetAttributeValueFromLdif "sstSpicePort" false <<< "$ldif" )"
 
     SC_VM_MIGRATION_SPICE_PORT[${uuid}]="$( \
-        ldapGetAttributeValueFromLdif "sstMigrationSpicePort" <<< "$ldif" )"
+        ldapGetAttributeValueFromLdif "sstMigrationSpicePort" false <<< "$ldif" )"
 
     return 0
 }
@@ -224,13 +224,14 @@ function scLdapLoadVmOperatingSystemInfoByUuid ()
     debug "scLdapLoadVmOperatingSystemInfoByUuid LDIF:"
     debug "$ldif"
 
-    SC_VM_OPERATING_SYSTEM[${uuid}]="$( ldapGetAttributeValueFromLdif "sstOperatingSystem" <<< "$ldif" )"
+    SC_VM_OPERATING_SYSTEM[${uuid}]="$( \
+        ldapGetAttributeValueFromLdif "sstOperatingSystem" false <<< "$ldif" )"
 
-    SC_VM_OPERATING_SYSTEM_TYPE[${uuid}]="$( \
-        ldapGetAttributeValueFromLdif "sstOperatingSystemType" <<< "$ldif" )"
+    SC_VM_OPERATING_SYSTEM_TYPE[${uuid}]="$( ldapGetAttributeValueFromLdif \
+            "sstOperatingSystemType" false <<< "$ldif" )"
 
-    SC_VM_OPERATING_SYSTEM_VERSION[${uuid}]="$( \
-        ldapGetAttributeValueFromLdif "sstOperatingSystemVersion" <<< "$ldif" )"
+    SC_VM_OPERATING_SYSTEM_VERSION[${uuid}]="$( ldapGetAttributeValueFromLdif \
+            "sstOperatingSystemVersion" false <<< "$ldif" )"
 
     return 0
 }
@@ -261,7 +262,7 @@ function scLdapLoadVmDhcpConfigInfoByUuid ()
     debug "$ldif"
 
     SC_VM_DHCP_HW_ADDRESS[${uuid}]="$( \
-        ldapGetAttributeValueFromLdif "dhcpHWAddress" <<< "$ldif" )"
+        ldapGetAttributeValueFromLdif "dhcpHWAddress" false <<< "$ldif" )"
 
     SC_VM_DHCP_STATEMENTS[${uuid}]="$( \
         ldapGetAttributeValueFromLdif "dhcpStatements" <<< "$ldif" )"
