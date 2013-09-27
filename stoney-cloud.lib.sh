@@ -296,6 +296,7 @@ function scLdapLoadVmDhcpConfigInfoByUuid ()
 function scLoadVmInfoByUuid ()
 {
     scLdapLoadVmInfoByUuid "$1"
+    return $?
 }
 
 
@@ -310,6 +311,7 @@ function scLoadVmInfoByUuid ()
 function scLoadVmOperatingSystemInfoByUuid
 {
     scLdapLoadVmOperatingSystemInfoByUuid "$1"
+    return $?
 }
 
 
@@ -324,4 +326,5 @@ function scLoadVmOperatingSystemInfoByUuid
 function scLoadVmDhcpConfigInfoByUuid
 {
     scLdapLoadVmDhcpConfigInfoByUuid "$1"
+    return $?
 }
