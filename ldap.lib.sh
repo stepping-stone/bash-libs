@@ -36,6 +36,9 @@ LIB_DIR=${LIB_DIR:="$(readlink -f ${0%/*})"}
 source "${LIB_DIR}/input-output.lib.sh"
 
 LDAPSEARCH_CMD="${LDAPSEARCH_CMD:="/usr/bin/ldapsearch"}"
+test -f "${LDAPSEARCH_CMD}" || \
+    die "Missing ldapsearch command: '${LDAPSEARCH_CMD}'"
+
 GREP_CMD="${GREP_CMD:="/bin/grep"}"
 
 
