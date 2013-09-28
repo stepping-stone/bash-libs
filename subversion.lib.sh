@@ -38,6 +38,8 @@ source "${LIB_DIR}/input-output.lib.sh"
 # The path to the svn command
 SVN_CMD="${SVN_CMD:="/usr/bin/svn"}"
 
+test -f "${SVN_CMD}" || die "Missing svn command: '${SVN_CMD}'"
+
 
 ## 
 # Private variables, do not overwrite them 
