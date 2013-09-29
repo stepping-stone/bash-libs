@@ -42,19 +42,103 @@ test -f "${LDAPSEARCH_CMD}" || \
 GREP_CMD="${GREP_CMD:="/bin/grep"}"
 
 
-# Simplified ldapsearch wrapper, which expects a bind dn and the corresponding
-# password within a file (in order to hide it from the process list)
+## 
+# Private variables, do not overwrite them 
 #
-# ldapSearch baseDN scope bindDN bindPasswordFile LdapUri [filter [attributes]]
+# Default LDAP server URI
+_LDAP_URI="ldap://localhost"
+
+# Default base DN
+_LDAP_BASE_DN="dc=example,dc=com"
+
+# Default bind DN and password file for binding.
+_LDAP_BIND_DN="cn=Manager,${_LDAP_BASE_DN}"
+_LDAP_BIND_PASSWORD_FILE="~/.ldappasswd"
+
+# Default search scope
+_LDAP_SEARCH_SCOPE="sub"
+
+# Default LDAP search filter
+_LDAP_SEARCH_FILTER='(objectClass=*)'
+
+
+# Set default LDAP server URI
+#
+# ldapSetServerUri uri
+function ldapSetServerUri()
+{
+    _LDAP_URI="${1}"
+}
+
+
+# Set default LDAP base DN
+#
+# ldapSetBaseDn baseDn
+function ldapSetBaseDn()
+{
+    _LDAP_BASE_DN="${1}"
+}
+
+
+# Set default DN and password file to use for binding.
+#
+# ldapSetBindCredentials bindDn bindPasswordFile
+function ldapSetBindCredentials()
+{
+    _LDAP_BIND_DN="${1}"
+    _LDAP_BIND_PASSWORD_FILE="${2}"
+
+    test -f "${_LDAP_BIND_PASSWORD_FILE}" || \
+        die "Missing LDAP password file: '${_LDAP_BIND_PASSWORD_FILE}'"
+}
+
+
+# Set default LDAP search scope
+#
+# Scope is one of 'base', 'one' or 'sub' and defaults to 'sub'.
+#
+# ldapSetSearchScope scope
+function ldapSetSearchScope()
+{
+    _LDAP_SEARCH_SCOPE="${1}"
+}
+
+
+# Set default LDAP search filter
+#
+# Defaults to '(objectclass=*)'.
+#
+# ldapSetSearchFilter filter
+function ldapSetSearchFilter()
+{
+    _LDAP_SEARCH_FILTER="${1}"
+}
+
+
+# Simplified ldapsearch wrapper.
+#
+# All arguments are optional and have global default values set.
+# See the following function descriptions in order to set the global defaults:
+# - ldapSetServerUri()
+# - ldapSetBaseDn()
+# - ldapSetBindCredentials()
+# - ldapSetSearchScope()
+# - ldapSetSearchFilter()
+# 
+# The bind password is expected to be in a file (in order to hide it from the
+# process list), see ldapSetBindCredentials().
+#
+# ldapSearch \
+#     [filter [baseDn [scope [attributes [bindDn [bindPasswordFile [uri]]]]]]]
 function ldapSearch ()
 {
-    local baseDn="$1"
-    local scope="$2"
-    local bindDn="$3"
-    local bindPasswordFile="$4"
-    local uri="$5"
-    local filter="${6:-"(objectClass=*)"}"
-    local attributes="${7}"
+    local filter="${1:-"${_LDAP_SEARCH_FILTER}"}"
+    local baseDn="${2:-"${_LDAP_BASE_DN}"}"
+    local scope="${3:-"${_LDAP_SEARCH_SCOPE}"}"
+    local attributes="${4}"
+    local bindDn="${5:-"${_LDAP_BIND_DN}"}"
+    local bindPasswordFile="${6:-"${_LDAP_BIND_PASSWORD_FILE}"}"
+    local uri="${7:-"${_LDAP_URI}"}"
 
     ${LDAPSEARCH_CMD} -b "${baseDn}" \
                       -LLL \
@@ -65,7 +149,7 @@ function ldapSearch ()
                       -W \
                       -x \
                       "${filter}" \
-                      ${attributes}
+                      ${attributes} 2>&1 | logCommandOutputOnError
           
     return $?
 }
