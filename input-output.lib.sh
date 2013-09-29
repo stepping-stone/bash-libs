@@ -44,10 +44,26 @@ SYSLOG_TAG="${SYSLOG_TAG:="$(${BASENAME_CMD} ${0})"}" # defaults to the name of 
 
 DEBUG=${DEBUG:='no'}
 
+## 
+# Private variables, do not overwrite them 
+#
+
+# The prefix to prepend to all messages 
+_IO_MESSAGE_PREFIX=''
+
+
+# Sets the message prefix which will be prepended to all messages
+#
+# ioSetMessagePrefix prefix
+function ioSetMessagePrefix ()
+{
+    _IO_MESSAGE_PREFIX="${1} "
+}
+
 
 function logAndPrint ()
 {
-    local message="$1"
+    local message="${_IO_MESSAGE_PREFIX}${1}"
     local tag="$2"
     local level="$3"
     local facility="$4"
