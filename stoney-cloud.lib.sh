@@ -36,12 +36,6 @@ source "${LIB_DIR}/ldap.lib.sh"
 
 GREP_CMD="${GREP_CMD:="/bin/grep"}"
 
-SC_LDAP_BIND_DN="${SC_LDAP_BIND_DN-"cn=Manager,dc=foss-cloud,dc=org"}"
-SC_LDAP_BIND_PASSWORD_FILE="${SC_LDAP_BIND_PASSWORD_FILE-"please-create-me.ldappass"}"
-SC_LDAP_BASE_DN="${SC_LDAP_BASE_DN-"dc=foss-cloud,dc=org"}"
-SC_LDAP_URI="${SC_LDAP_URI-"ldap://localhost"}"
-SC_LDAP_VIRTUAL_MACHINES_SUBTREE="${SC_LDAP_VIRTUAL_MACHINES_SUBTREE-"ou=virtual machines,ou=virtualization,ou=services"}"
-SC_LDAP_DHCP_CONFIG_SUBTREE="${SC_LDAP_DHCP_CONFIG_SUBTREE-"cn=config-01,ou=dhcp,ou=networks,ou=virtualization,ou=services"}"
 
 declare -A SC_VM_HOST_NAME
 declare -A SC_VM_DOMAIN_NAME
@@ -58,34 +52,24 @@ declare -A SC_VM_DHCP_HW_ADDRESS
 declare -A SC_VM_DHCP_STATEMENTS
 declare -A SC_VM_DHCP_IP_ADDRESS
 
-
-
-# Performs an LDAP search and prints the LDIF output to STDOUT.
-# 
-# The bind DN, the bind password file and the LDAP URI have to be specified
-# once within the global SC_LDAP_BIND_DN, SC_LDAP_BIND_PASSWORD_FILE and
-# SC_LDAP_URI variables.
-# The desired LDAP search scope, filter and attributes can optionally be passed,
-# otherwise it returns all leafs with an objectClass=* and scope sub.
+## 
+# Protected variables, only overwrite if necessary.
 #
-# scLdapSearch <BASE-DN> [<SCOPE> [<FILTER>] [<ATTRIBUTE-1>[ <ATTRIBUTE-N>]]]
-function scLdapSearch ()
+# Various LDAP subtrees
+SC_LDAP_VIRTUAL_MACHINES_SUBTREE="${SC_LDAP_VIRTUAL_MACHINES_SUBTREE:-"ou=virtual machines,ou=virtualization,ou=services"}"
+SC_LDAP_DHCP_CONFIG_SUBTREE="${SC_LDAP_DHCP_CONFIG_SUBTREE:-"cn=config-01,ou=dhcp,ou=networks,ou=virtualization,ou=services"}"
+
+
+# Set the stoney cloud related LDAP settings.
+#
+# scSetLdapSettings bindDn bindPasswordFile baseDn serverUri
+function scSetLdapSettings ()
 {
-    local baseDn="${1-"${SC_LDAP_BASE_DN}"}"
-    local scope="${2-"sub"}"
-    local filter="${3:-"(objectClass=*)"}"
-    local attributes="${4}"
+    ldapSetBindCredentials "${1:-"cn=Manager,dc=stoney-cloud,dc=org"}" \
+                           "${2:-"please-create-me.ldappass"}"
 
-    ldapSearch "${baseDn}" \
-               "${scope}" \
-               "${SC_LDAP_BIND_DN}" \
-               "${SC_LDAP_BIND_PASSWORD_FILE}" \
-               "${SC_LDAP_URI}" \
-               "${filter}" \
-               "${attributes}"
-    
-    return $?
-
+    ldapSetBaseDn "${3:-"dc=stoney-cloud,dc=org"}"
+    ldapSetServerUri "${4:-"ldap://localhost"}"
 }
 
 
@@ -100,10 +84,10 @@ function scLdapGetVmLdifByUuid ()
 {
     local uuid="$1"
 
-    scLdapSearch "${SC_LDAP_VIRTUAL_MACHINES_SUBTREE},${SC_LDAP_BASE_DN}" \
-                 "one" \
-                 "(sstVirtualMachine=${uuid})" \
-                 "${@:2}"
+    ldapSearch "(sstVirtualMachine=${uuid})" \
+               "${SC_LDAP_VIRTUAL_MACHINES_SUBTREE},${SC_LDAP_BASE_DN}" \
+               "one" \
+               "${@:2}"
 
     return $?
 
@@ -123,10 +107,10 @@ function scLdapGetVmOperatingSystemLdifByUuid ()
     local uuid="$1"
     local baseDn="${SC_LDAP_VIRTUAL_MACHINES_SUBTREE},${SC_LDAP_BASE_DN}"
 
-    scLdapSearch \
+    ldapSearch \
+        "(ou=operating system)" \
         "sstVirtualMachine=${uuid},${baseDn}" \
         "one" \
-        "(ou=operating system)" \
         "${@:2}"
 
     return $?
@@ -145,10 +129,10 @@ function scLdapGetVmDhcpConfigLdifByUuid ()
     local uuid="$1"
     local baseDn="${SC_LDAP_DHCP_CONFIG_SUBTREE},${SC_LDAP_BASE_DN}"
 
-    scLdapSearch \
+    ldapSearch \
+        "(&(cn=${uuid})(objectClass=dhcpHost))" \
         "${baseDn}" \
         "sub" \
-        "(&(cn=${uuid})(objectClass=dhcpHost))" \
         "${@:2}"
 
     return $?
