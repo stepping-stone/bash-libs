@@ -97,7 +97,7 @@ function subversionUpdate()
         --no-auth-cache \
         --non-interactive \
         --accept "${conflictResolutionAction}" \
-        ${path} 2>&1 | logCommandOutputOnError
+        ${path} 2> >(error -)
 
     return $?
 }
@@ -115,7 +115,7 @@ function subversionAdd()
 
     ${SVN_CMD} add \
         --non-interactive \
-        ${path} 2>&1 | logCommandOutputOnError
+        ${path} 2> >(error -)
 
     return $?
 }
@@ -136,7 +136,7 @@ function subversionPropset()
     ${SVN_CMD} propset \
         --non-interactive \
         "${property}" "${value}" \
-        ${path} 2>&1 | logCommandOutputOnError
+        ${path} 2> >(error -)
 
     return $?
 }
@@ -183,7 +183,7 @@ function subversionCommit()
         --no-auth-cache \
         --non-interactive \
         --message "${message}" \
-        ${path} 2>&1 | logCommandOutputOnError
+        ${path} 1> >(debug -) 2> >(error -)
 
     return $?
 }
