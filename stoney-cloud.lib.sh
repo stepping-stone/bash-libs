@@ -60,16 +60,30 @@ SC_LDAP_VIRTUAL_MACHINES_SUBTREE="${SC_LDAP_VIRTUAL_MACHINES_SUBTREE:-"ou=virtua
 SC_LDAP_DHCP_CONFIG_SUBTREE="${SC_LDAP_DHCP_CONFIG_SUBTREE:-"cn=config-01,ou=dhcp,ou=networks,ou=virtualization,ou=services"}"
 
 
+## 
+# Private variables, do not overwrite them 
+#
+_SC_LDAP_VIRTUAL_MACHINES_BASE_DN=''
+_SC_LDAP_DHCP_CONFIG_BASE_DN=''
+
+
 # Set the stoney cloud related LDAP settings.
 #
 # scSetLdapSettings bindDn bindPasswordFile baseDn serverUri
 function scSetLdapSettings ()
 {
-    ldapSetBindCredentials "${1:-"cn=Manager,dc=stoney-cloud,dc=org"}" \
-                           "${2:-"please-create-me.ldappass"}"
+    local bindDn="${1:-"cn=Manager,dc=stoney-cloud,dc=org"}"
+    local bindPasswordFile="${2:-"please-create-me.ldappass"}"
+    local baseDn="${3:-"dc=stoney-cloud,dc=org"}"
+    local serverUri="${4:-"ldap://localhost"}"
 
-    ldapSetBaseDn "${3:-"dc=stoney-cloud,dc=org"}"
-    ldapSetServerUri "${4:-"ldap://localhost"}"
+    ldapSetBindCredentials "${bindDn}" "${bindPasswordFile}"
+    ldapSetBaseDn "${baseDn}"
+
+    _SC_LDAP_VIRTUAL_MACHINES_BASE_DN="${SC_LDAP_VIRTUAL_MACHINES_SUBTREE},${baseDn}"
+    _SC_LDAP_DHCP_CONFIG_BASE_DN="${SC_LDAP_DHCP_CONFIG_SUBTREE},${baseDn}"
+
+    ldapSetServerUri "${serverUri}"
 }
 
 
@@ -85,7 +99,7 @@ function scLdapGetVmLdifByUuid ()
     local uuid="$1"
 
     ldapSearch "(sstVirtualMachine=${uuid})" \
-               "${SC_LDAP_VIRTUAL_MACHINES_SUBTREE},${SC_LDAP_BASE_DN}" \
+               "${_SC_LDAP_VIRTUAL_MACHINES_BASE_DN}" \
                "one" \
                "${@:2}"
 
@@ -105,11 +119,10 @@ function scLdapGetVmLdifByUuid ()
 function scLdapGetVmOperatingSystemLdifByUuid ()
 {
     local uuid="$1"
-    local baseDn="${SC_LDAP_VIRTUAL_MACHINES_SUBTREE},${SC_LDAP_BASE_DN}"
 
     ldapSearch \
         "(ou=operating system)" \
-        "sstVirtualMachine=${uuid},${baseDn}" \
+        "sstVirtualMachine=${uuid},${_SC_LDAP_VIRTUAL_MACHINES_BASE_DN}" \
         "one" \
         "${@:2}"
 
@@ -127,11 +140,10 @@ function scLdapGetVmOperatingSystemLdifByUuid ()
 function scLdapGetVmDhcpConfigLdifByUuid ()
 {
     local uuid="$1"
-    local baseDn="${SC_LDAP_DHCP_CONFIG_SUBTREE},${SC_LDAP_BASE_DN}"
 
     ldapSearch \
         "(&(cn=${uuid})(objectClass=dhcpHost))" \
-        "${baseDn}" \
+        "${_SC_LDAP_DHCP_CONFIG_BASE_DN}" \
         "sub" \
         "${@:2}"
 
@@ -256,13 +268,13 @@ function scLdapLoadVmDhcpConfigInfoByUuid ()
     debug "dhcpStatements: ${SC_VM_DHCP_STATEMENTS[${vmUuid}]}"
 
     local dhcpStatement=''
-    for dhcpStatement in "${SC_VM_DHCP_STATEMENTS[${vmUuid}]}"; do
+    while read dhcpStatement; do
         debug "dhcpStatement: ${dhcpStatement}"
-        if [ ${GREP_CMD} -q -E '^fixed-address ' <<< "${dhcpStatement}" ]; then
+        if ${GREP_CMD} -q -E '^fixed-address ' <<< "${dhcpStatement}"; then
             # Extract the IP address from the 'fixed-address 192.0.2.3' string.
             SC_VM_DHCP_IP_ADDRESS[${uuid}]="${dhcpStatement/* /}"
         fi
-    done
+    done <<< "${SC_VM_DHCP_STATEMENTS[${vmUuid}]}"
 
 
     return 0
