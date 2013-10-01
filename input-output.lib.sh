@@ -63,10 +63,51 @@ function ioSetMessagePrefix ()
 
 function logAndPrint ()
 {
-    local message="${_IO_MESSAGE_PREFIX}${1}"
+    local message="${1}"
     local tag="$2"
     local level="$3"
     local facility="$4"
+
+    if [ "${message}" = '-' ]; then
+        # Read from STDIN
+        local message=''
+
+        while read output; do
+            message+="${output}"
+        done
+
+        # empty message, do not output anything.
+        test -z "$message" && return 0
+    fi
+
+    local levelPrefix=''
+    case $level in
+        debug)
+            levelPrefix="[DEBUG]"
+            ;;
+
+        info)
+            levelPrefix="[INFO]"
+            ;;
+
+        warning)
+            levelPrefix="[WARNING]"
+            ;;
+
+        err)
+            levelPrefix="[ERROR]" 
+            ;;
+
+        emerg)
+            levelPrefix="[DIE]"
+            ;;
+
+        *)
+            levelPrefix="[???]"
+            ;;
+    esac
+        
+    message="${levelPrefix} ${_IO_MESSAGE_PREFIX}${message}"
 
     if [ -z "${tag}" ]; then
         local tag="${SYSLOG_TAG}"
@@ -92,7 +133,7 @@ function info ()
     local message="$1"
     local tag="$2"
 
-    logAndPrint "[INFO] ${message}" "$tag" 'info' 'user'
+    logAndPrint "${message}" "$tag" 'info' 'user'
 }
 
 function warn ()
@@ -100,7 +141,7 @@ function warn ()
     local message="$1"
     local tag="$2"
 
-    logAndPrint "[WARNING] ${message}" "$tag" 'warning' 'user'
+    logAndPrint "${message}" "$tag" 'warning' 'user'
 }
 
 
@@ -109,7 +150,7 @@ function error ()
     local message="$1"
     local tag="$2"
 
-    logAndPrint "[ERROR] ${message}" "$tag" 'err' 'user'
+    logAndPrint "${message}" "$tag" 'err' 'user'
 }
 
 function die ()
@@ -117,7 +158,7 @@ function die ()
     local message="$1"
     local tag="$2"
 
-    logAndPrint "[DIE] ${message}" "$tag" 'emerg' 'user'
+    logAndPrint "${message}" "$tag" 'emerg' 'user'
     exit 1
 }
 
@@ -130,7 +171,7 @@ function debug ()
         return 0
     fi
 
-    logAndPrint "[DEBUG] ${message}" "$tag" 'debug' 'user'
+    logAndPrint "${message}" "$tag" 'debug' 'user'
 }
 
 # Reads lines from STDIN and logs those lines via the error or debug functions
