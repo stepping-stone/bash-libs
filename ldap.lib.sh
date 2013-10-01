@@ -149,7 +149,7 @@ function ldapSearch ()
                       -W \
                       -x \
                       "${filter}" \
-                      ${attributes} 2>&1 | logCommandOutputOnError
+                      ${attributes} 2> >(error -)
           
     return $?
 }
