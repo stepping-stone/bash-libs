@@ -183,7 +183,7 @@ function subversionCommit()
         --no-auth-cache \
         --non-interactive \
         --message "${message}" \
-        ${path} 1> >(debug -) 2> >(error -)
+        ${path} 2> >(error -)
 
     return $?
 }
