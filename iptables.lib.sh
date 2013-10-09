@@ -492,3 +492,40 @@ function iptablesCreateOrFlushChain()
 
     return $?
 }
+
+# Search for a given iptables comment string and returns the matching rule(s)
+function iptablesGetRuleByComment()
+{
+    local chain="$1"
+    local comment="$2"
+    local table="${3:-"filter"}"
+
+    local regex=" -m comment --comment ${comment}( |\$)"
+
+    $IPTABLES_CMD --table "$table" --list-rules "$chain" | while read rule
+    do
+        if [[ "$rule" =~ $regex ]]; then
+            echo "$rule"
+        fi
+    done
+
+    # return the exit status of the iptables command
+    return ${PIPESTATUS[0]}
+}
+
+# Stripes off the "-A chain_name" from a given rule
+#
+# Usefull if you have a rule from a iptables --list-rules output which you would
+# like to delete from a given chain.
+function iptablesStripAppendChainFromRule()
+{
+    local rule="$1"
+    local regex="^-A [^ ]* (.*)\$"
+
+    if [[ "$rule" =~ $regex ]]; then
+        echo ${BASH_REMATCH[1]}
+        return 0
+    fi
+
+    return 1
+}
