@@ -35,6 +35,15 @@ LIB_DIR=${LIB_DIR:="$(readlink -f ${0%/*})"}
 
 LOGGER_CMD="${LOGGER_CMD:="/usr/bin/logger"}"
 
+if ! test -x "${LOGGER_CMD}"; then
+    LOGGER_CMD="/bin/logger"
+
+    if ! test -x "${LOGGER_CMD}"; then
+        echo "Missing logger command: '${LOGGER_CMD}'" >&2
+        exit 1
+    fi
+fi
+
 
 function syslog ()
 {
