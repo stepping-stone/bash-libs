@@ -49,7 +49,7 @@ DEBUG=${DEBUG:='no'}
 #
 
 # The prefix to prepend to all messages 
-_IO_MESSAGE_PREFIX=''
+_IO_MESSAGE_PREFIX="${_IO_MESSAGE_PREFIX:=""}"
 
 
 # Sets the message prefix which will be prepended to all messages
@@ -57,7 +57,7 @@ _IO_MESSAGE_PREFIX=''
 # ioSetMessagePrefix prefix
 function ioSetMessagePrefix ()
 {
-    _IO_MESSAGE_PREFIX="${1} "
+   export _IO_MESSAGE_PREFIX="${1} "
 }
 
 
