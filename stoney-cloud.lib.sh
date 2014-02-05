@@ -52,6 +52,13 @@ declare -A SC_VM_DHCP_HW_ADDRESS
 declare -A SC_VM_DHCP_STATEMENTS
 declare -A SC_VM_DHCP_IP_ADDRESS
 
+declare -A SC_VM_NETWORK_INTERFACE_NAME
+declare -A SC_VM_NETWORK_INTERFACE_MAC_ADDRESS
+declare -A SC_VM_NETWORK_INTERFACE_MODEL_TYPE
+declare -A SC_VM_NETWORK_INTERFACE_TYPE
+declare -A SC_VM_NETWORK_INTERFACE_SOURCE_BRIDGE
+
+
 ## 
 # Protected variables, only overwrite if necessary.
 #
@@ -146,6 +153,28 @@ function scLdapGetVmDhcpConfigLdifByUuid ()
         "${_SC_LDAP_DHCP_CONFIG_BASE_DN}" \
         "sub" \
         "${@:2}"
+
+    return $?
+}
+
+# Performs an LDAP search for a VMs network interface and prints
+# the corresponding LDIF to STDOUT
+#
+# The  desired LDAP attributes can be optionally passed, otherwise it returns
+# all the attributes.
+#
+# scLdapGetVmNetworkInterfaceDeviceLdifByUuidAndName \
+#     <UUID> <INTERFACE-NAME> [<ATTRIBUTE-1>[ <ATTRIBUTE-2>[ <ATTRIBUTE-N>]]]
+function scLdapGetVmNetworkInterfaceDeviceLdifByUuidAndName ()
+{
+    local uuid="$1"
+    local interfaceName="$2"
+
+    ldapSearch \
+        "(sstInterface=${interfaceName})" \
+        "ou=devices,sstVirtualMachine=${uuid},${_SC_LDAP_VIRTUAL_MACHINES_BASE_DN}" \
+        "one" \
+        "${@:3}"
 
     return $?
 }
@@ -280,6 +309,57 @@ function scLdapLoadVmDhcpConfigInfoByUuid ()
     return 0
 }
 
+# Loads the VM related network interface device informations, referenced by 
+# the VM's UUID and the network interface name from the LDAP directroy and
+# populates the various SC_VM_* arrays which use the VM's UUID as the array
+# key for referencing the value.
+#
+# scLdapLoadVmNetworkInterfaceDeviceInfoByUuidAndName <UUID> <INTERFACE-NAME>
+function scLdapLoadVmNetworkInterfaceDeviceInfoByUuidAndName ()
+{
+    local uuid="$1"
+    local interfaceName="$2"
+
+    local attributes="sstInterface
+                      sstMacAddress
+                      sstModelType
+                      sstSourceBridge
+                      sstType"
+
+    local ldif
+    ldif="$( scLdapGetVmNetworkInterfaceDeviceLdifByUuidAndName \
+                 "${uuid}" "${interfaceName}" "${attributes}" 2>&1)"
+
+    local returnValue="$?"
+
+    if [ $returnValue -ne 0 ]; then
+        error "LDAP search for VM UUID '${uuid}' failed: ${ldif}"
+        return $returnValue
+    fi
+
+    debug "scLdapLoadVmNetworkInterfaceDeviceInfoByUuidAndName LDIF:"
+    debug "$ldif"
+
+    SC_VM_NETWORK_INTERFACE_NAME[${uuid}]="$( \
+        ldapGetAttributeValueFromLdif "sstInterface" false <<< "$ldif" )"
+
+    SC_VM_NETWORK_INTERFACE_MAC_ADDRESS[${uuid}]="$( \
+        ldapGetAttributeValueFromLdif "sstMacAddress" false <<< "$ldif" )"
+
+    SC_VM_NETWORK_INTERFACE_MODEL_TYPE[${uuid}]="$( \
+        ldapGetAttributeValueFromLdif "sstModelType" false <<< "$ldif" )"
+
+    SC_VM_NETWORK_INTERFACE_TYPE[${uuid}]="$( \
+        ldapGetAttributeValueFromLdif "sstType" false <<< "$ldif" )"
+
+    if [ "${SC_VM_NETWORK_INTERFACE_TYPE[${uuid}]}" == "bridge" ]; then
+        SC_VM_NETWORK_INTERFACE_SOURCE_BRIDGE[${uuid}]="$( \
+            ldapGetAttributeValueFromLdif "sstSourceBridge" false <<< "$ldif" )"
+    fi
+
+    return 0
+}
+
 
 # Loads the VM related informations, referenced by it's UUID and populates
 # the various SC_VM_* arrays
@@ -322,5 +402,20 @@ function scLoadVmOperatingSystemInfoByUuid
 function scLoadVmDhcpConfigInfoByUuid
 {
     scLdapLoadVmDhcpConfigInfoByUuid "$1"
+    return $?
+}
+
+
+# Loads the VM related network interface device informations, referenced by it's UUID
+# and populates the various SC_VM_* arrays
+#
+# This function merely serves as a "database abstraction layer" without any
+# logic at the moment. This allows one to implement different data storages
+# in the future, without having to change the dependent code.
+#
+#  scLdapLoadVmNetworkInterfaceDeviceInfoByUuidAndName <UUID> <INTERFACE-NAME>
+function scLoadVmNetworkInterfaceDeviceInfoByUuidAndName
+{
+    scLdapLoadVmNetworkInterfaceDeviceInfoByUuidAndName "$1" "$2"
     return $?
 }
