@@ -157,6 +157,27 @@ function scLdapGetVmDhcpConfigLdifByUuid ()
     return $?
 }
 
+# Performs an LDAP search for a DHCP subnet by a given filter and prints the
+# corresponding LDIF to STDOU
+#
+# The desired LDAP attributes can be optionally passed, otherwise it returns
+# all the attributes.
+#
+# scLdapGetDhcpSubnetLdifByFilter \
+#     <LDAP-FILTER> [<ATTRIBUTE-1>[ <ATTRIBUTE-2>[ <ATTRIBUTE-N>]]]
+function scLdapGetDhcpSubnetLdifByFilter ()
+{
+    local filter="${1}"
+
+    ldapSearch \
+        "(&(${filter})(objectClass=dhcpSubnet))" \
+        "${_SC_LDAP_DHCP_CONFIG_BASE_DN}" \
+        "one" \
+        "${@:2}"
+
+    return $?
+}
+
 # Performs an LDAP search for a VMs network interface and prints
 # the corresponding LDIF to STDOUT
 #
@@ -361,6 +382,34 @@ function scLdapLoadVmNetworkInterfaceDeviceInfoByUuidAndName ()
 }
 
 
+# Get the netfilter interface alias (such as 'pub') which corresponds to a
+# bridging device (such as 'vmbr0').
+#
+# scLdapGetNetFilterInterfaceAliasByBridgeName <BRIDGE-NAME>
+function scLdapGetNetFilterInterfaceAliasByBridgeName ()
+{
+    local filter="sstSourceBridge=${1}"
+
+    local attribut="sstNetfilterInterfaceAlias"
+
+    local ldif
+    ldif="$( scLdapGetDhcpSubnetLdifByFilter "${filter}" "${attribut}" 2>&1)"
+
+    local returnValue="$?"
+
+    if [ $returnValue -ne 0 ]; then
+        error "LDAP search for source bridge '${1}' failed: ${ldif}"
+        return $returnValue
+    fi
+
+    debug "${FUNCNAME} LDIF:"
+    debug "$ldif"
+
+    ldapGetAttributeValueFromLdif "${attribut}" false <<< "$ldif"
+    return 0
+}
+
+
 # Loads the VM related informations, referenced by it's UUID and populates
 # the various SC_VM_* arrays
 #
@@ -417,5 +466,20 @@ function scLoadVmDhcpConfigInfoByUuid
 function scLoadVmNetworkInterfaceDeviceInfoByUuidAndName
 {
     scLdapLoadVmNetworkInterfaceDeviceInfoByUuidAndName "$1" "$2"
+    return $?
+}
+
+
+# Get the netfilter interface alias (such as 'pub') which corresponds to a
+# bridging device (such as 'vmbr0').
+#
+# This function merely serves as a "database abstraction layer" without any
+# logic at the moment. This allows one to implement different data storages
+# in the future, without having to change the dependent code.
+#
+# scGetNetFilterInterfaceAliasByBridgeName <BRIDGE-NAME>
+function scGetNetFilterInterfaceAliasByBridgeName ()
+{
+    scLdapGetNetFilterInterfaceAliasByBridgeName "$1"
     return $?
 }
