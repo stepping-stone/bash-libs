@@ -267,7 +267,7 @@ function scLdapLoadVmOperatingSystemInfoByUuid ()
         return $returnValue
     fi
 
-    debug "scLdapLoadVmOperatingSystemInfoByUuid LDIF:"
+    debug "${FUNCNAME} LDIF:"
     debug "$ldif"
 
     SC_VM_OPERATING_SYSTEM[${uuid}]="$( \
@@ -304,7 +304,7 @@ function scLdapLoadVmDhcpConfigInfoByUuid ()
         return $returnValue
     fi
 
-    debug "scLdapLoadVmDhcpConfigInfoByUuid LDIF:"
+    debug "${FUNCNAME} LDIF:"
     debug "$ldif"
 
     SC_VM_DHCP_HW_ADDRESS[${uuid}]="$( \
@@ -358,7 +358,7 @@ function scLdapLoadVmNetworkInterfaceDeviceInfoByUuidAndName ()
         return $returnValue
     fi
 
-    debug "scLdapLoadVmNetworkInterfaceDeviceInfoByUuidAndName LDIF:"
+    debug "${FUNCNAME} LDIF:"
     debug "$ldif"
 
     SC_VM_NETWORK_INTERFACE_NAME[${uuid}]="$( \
