@@ -3,10 +3,10 @@
 # ldap.lib.sh - Bash library functions related to LDAP searches
 ################################################################################
 #
-# Copyright (C) 2013 stepping stone GmbH
-#                    Bern, Switzerland
-#                    http://www.stepping-stone.ch
-#                    support@stepping-stone.ch
+# Copyright (C) 2013 - 2014 stepping stone GmbH
+#                           Bern, Switzerland
+#                           http://www.stepping-stone.ch
+#                           support@stepping-stone.ch
 #
 # Authors:
 #   Christian Affolter <christian.affolter@stepping-stone.ch>
@@ -38,6 +38,10 @@ source "${LIB_DIR}/input-output.lib.sh"
 LDAPSEARCH_CMD="${LDAPSEARCH_CMD:="/usr/bin/ldapsearch"}"
 test -f "${LDAPSEARCH_CMD}" || \
     die "Missing ldapsearch command: '${LDAPSEARCH_CMD}'"
+
+LDAPADD_CMD="${LDAPADD_CMD:="/usr/bin/ldapadd"}"
+test -f "${LDAPADD_CMD}" || \
+    die "Missing ldapadd command: '${LDAPADD_CMD}'"
 
 GREP_CMD="${GREP_CMD:="/bin/grep"}"
 
@@ -226,4 +230,68 @@ function ldapGetAttributeValueFromLdif ()
             fi
         done
     done
+}
+
+# Loads an LDIF file into an LDAP directory.
+#
+# All but the first argument are optional and have global default values set.
+# See the following function descriptions in order to set the global defaults:
+# - ldapSetServerUri()
+# - ldapSetBaseDn()
+# - ldapSetBindCredentials()
+# 
+# The bind password is expected to be in a file (in order to hide it from the
+# process list), see ldapSetBindCredentials().
+#
+# ldapAddLdif ldifFile [bindDn [bindPasswordFile [uri]]]
+function ldapAddLdif ()
+{
+    local ldifFile="${1}"
+    local bindDn="${2:-"${_LDAP_BIND_DN}"}"
+    local bindPasswordFile="${3:-"${_LDAP_BIND_PASSWORD_FILE}"}"
+    local uri="${4:-"${_LDAP_URI}"}"
+
+    ${LDAPADD_CMD} -D "${bindDn}" \
+                   -y "${bindPasswordFile}" \
+                   -H "${uri}" \
+                   -x \
+                   -f "${ldifFile}" 2> >(error -)
+          
+    return $?
+}
+
+
+# Loads all LDIF files from a given folder into an LDAP directory.
+#
+# All the files to load must have a .ldif file ending.
+# Returns 0 on success otherwise the number of failed LDIFs to load
+#
+# See ldapAddLdif for more details.
+#
+# ldapLoadLdifs ldifDir [bindDn [bindPasswordFile [uri]]]
+function ldapLoadLdifs ()
+{
+    local ldifDir="${1}"
+    local bindDn="${2}"
+    local bindPasswordFile="${3}"
+    local uri="${4}"
+
+    if ! test -d "${ldifDir}"; then
+        error "Missing LDIF directory: '${ldifDir}'"
+        return 1
+    fi
+
+    local returnValue=0
+
+    for ldif in ${ldifDir}/*.ldif; do
+        debug "Loading LDIF: ${ldif}"
+
+        if ! ldapAddLdif "${ldif}" "${bindDn}" "${bindPasswordFile}" "${uri}"
+        then
+            error "Unable to load LDIF: ${ldif}"
+            ((returnValue++))
+        fi
+    done
+
+    return $returnValue
 }
