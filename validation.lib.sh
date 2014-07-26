@@ -40,5 +40,6 @@ function validationDieIfCommandMissing ()
     local cmdPath="${1}"
     local cmdName="$( basename "${cmdPath}" )"
 
+    debug "Checking ${cmdPath}"
     test -x "${cmdPath}" || die "Missing ${cmdName} command at '${cmdPath}'"
 }
