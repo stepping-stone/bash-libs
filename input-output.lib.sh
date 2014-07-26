@@ -171,5 +171,5 @@ function debug ()
         return 0
     fi
 
-    logAndPrint "${message}" "$tag" 'debug' 'user'
+    logAndPrint "${FUNCNAME[1]}: ${message}" "$tag" 'debug' 'user'
 }
