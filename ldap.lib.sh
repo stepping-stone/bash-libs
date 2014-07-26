@@ -293,9 +293,14 @@ function ldapAddLdif ()
 function ldapLoadLdifs ()
 {
     local ldifDir="${1}"
-    local bindDn="${2}"
-    local bindPasswordFile="${3}"
-    local uri="${4}"
+    local bindDn="${2:-"${_LDAP_BIND_DN}"}"
+    local bindPasswordFile="${3:-"${_LDAP_BIND_PASSWORD_FILE}"}"
+    local uri="${4:-"${_LDAP_URI}"}"
+
+    debug "ldifDir:          ${ldifDir}"
+    debug "bindDn:           ${bindDn}"
+    debug "bindPasswordFile: ${bindPasswordFile}"
+    debug "uri:              ${uri}"
 
     if ! test -d "${ldifDir}"; then
         error "Missing LDIF directory: '${ldifDir}'"
