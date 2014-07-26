@@ -59,17 +59,17 @@ function gitCloneRepository ()
 }
 
 
-# Checks out a given branch (default master) in a Git directory
+# Checks out a given branch (default master) in a Git working directory
 #
 # Returns the exit status of the git command.
 #
 # gitCheckoutBranch directory [branch]
 function gitCheckoutBranch ()
 {
-    local gitDir="$1"
+    local workingDir="$1"
     local branch="${2:-"master"}"
 
-    ${GIT_CMD} --git-dir "${gitDir}" \
+    ${GIT_CMD} -C "${workingDir}" \
                checkout "${branch}" 2> >(error -)
     
     return $?
