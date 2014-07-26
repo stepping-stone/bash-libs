@@ -119,6 +119,27 @@ function ldapSetSearchFilter()
 }
 
 
+# Set default LDAP settings
+#
+# Wrapper function for
+# - ldapSetBindCredentials()
+# - ldapSetBaseDn()
+# - ldapSetServerUri()
+#
+# ldapSetDefaults bindDn bindPasswordFile baseDn uri
+function ldapSetDefaults ()
+{
+    local bindDn="${1}"
+    local bindPasswordFile="${2}"
+    local baseDn="${3}"
+    local uri="${4}"
+
+    ldapSetBindCredentials "${bindDn}" "${bindPasswordFile}"
+    ldapSetBaseDn "${baseDn}"
+    ldapSetServerUri "${uri}"
+}
+
+
 # Simplified ldapsearch wrapper.
 #
 # All arguments are optional and have global default values set.
