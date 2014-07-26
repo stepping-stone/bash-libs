@@ -48,6 +48,7 @@ function configLoadConfig ()
         die "Not enough permissions to read config file: ${configPath}"
     fi
 
+    debug "Loading variables from ${configPath}"
     source "${configPath}"
 }
 
@@ -56,6 +57,7 @@ function configIsParameterValuePresent ()
     local parameterName="$1"
     local parameterValue="$( eval echo \$${parameterName} )"
 
+    debug "Check if parameter '${parameterName}' is present"
     test -n "$parameterValue"
     return $?
 }
