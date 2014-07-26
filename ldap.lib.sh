@@ -316,3 +316,40 @@ function ldapLoadLdifs ()
 
     return $returnValue
 }
+
+# Wait until a connection to a given LDAP URI is available
+#
+# Periodically performs an ldapsearch on the NULL DN until a connection is
+# possible or a timout occoured.
+#
+# This is helpfull if a slapd was started just before (either manually or via
+# init script) but is not yet ready for processing.
+# See http://www.openldap.org/its/index.cgi/?findid=6848
+# The functions is inspired by SUSE's slapd init script.
+#
+# Returns 0 as soon as the LDAP connection is available and 1 if a timeout
+# occured.
+#
+# The timeout defaults to 10 seconds.
+#
+# ldapWaitForConnection [uri timeout]]
+function ldapWaitForConnection()
+{
+    local uri="${1:-"${_LDAP_URI}"}"
+    local timeout="${2:-10}" # in seconds
+
+    local dateCmd="date +%s" # time in seconds since the epoch
+    local startTime="$( ${dateCmd} )"
+
+    debug "uri:       ${uri}"
+    debug "timeOut:   ${timeout}"
+    debug "startTime: ${startTime}"
+
+    while [ $(( $( ${dateCmd} ) - ${startTime} )) -lt ${timeout} ]; do
+        ${LDAPSEARCH_CMD} -b "" -s base -x -H "${uri}" &>/dev/null && return 0
+        debug "seconds passed: $(( $( ${dateCmd} ) - ${startTime} ))"
+	sleep 1
+    done
+
+    return 1 # timed out
+}
