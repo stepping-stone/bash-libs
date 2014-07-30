@@ -53,7 +53,7 @@ function gitCloneRepository ()
 
     ${GIT_CMD} clone \
                "${gitUrl}" \
-               "${gitDir}" 2> >(error -)
+               "${gitDir}" 2> >(info -)
 
     return $?
 }
@@ -77,7 +77,7 @@ function gitCheckoutBranch ()
     fi
 
     ${GIT_CMD} -C "${workingDir}" \
-               checkout ${track} "${branch}" 2> >(error -)
+               checkout ${track} "${branch}" 2> >(info -)
     
     return $?
 }
