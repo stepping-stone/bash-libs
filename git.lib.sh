@@ -63,14 +63,21 @@ function gitCloneRepository ()
 #
 # Returns the exit status of the git command.
 #
-# gitCheckoutBranch directory [branch]
+# gitCheckoutBranch directory [branch [track]]
 function gitCheckoutBranch ()
 {
     local workingDir="$1"
     local branch="${2:-"master"}"
+    local track=${3}
+
+    if $track; then
+    	track="--track";
+    else
+    	track=""
+    fi
 
     ${GIT_CMD} -C "${workingDir}" \
-               checkout "${branch}" 2> >(error -)
+               checkout ${track} "${branch}" 2> >(error -)
     
     return $?
 }
