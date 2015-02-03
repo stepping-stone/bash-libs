@@ -3,10 +3,10 @@
 # validation.lib.sh - Bash library functions related to validation
 ################################################################################
 #
-# Copyright (C) 2014 stepping stone GmbH
-#                    Bern, Switzerland
-#                    http://www.stepping-stone.ch
-#                    support@stepping-stone.ch
+# Copyright (C) 2014 - 2015 stepping stone GmbH
+#                           Bern, Switzerland
+#                           http://www.stepping-stone.ch
+#                           support@stepping-stone.ch
 #
 # Authors:
 #   Christian Affolter <christian.affolter@stepping-stone.ch>
@@ -42,4 +42,25 @@ function validationDieIfCommandMissing ()
 
     debug "Checking ${cmdPath}"
     test -x "${cmdPath}" || die "Missing ${cmdName} command at '${cmdPath}'"
+}
+
+# Checks if a given value matches a given regular expression.
+#
+# Returns 0 on match, otherwise 1
+# Prints an error message if passed.
+#
+# validationRegex <VALUE> <REGEX> [<ERROR-MESSAGE>]
+function validationRegex() {
+    local value="${1}"
+    local regex="${2}"
+    local errorMessage="${3}"
+
+    if ! [[ "${value}" =~ $regex ]]; then
+        if test -n "$errorMessage"; then
+            error "$errorMessage"
+        fi
+        return 1
+    fi
+
+    return 0
 }
