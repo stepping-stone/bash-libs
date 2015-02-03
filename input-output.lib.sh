@@ -3,10 +3,10 @@
 # input-output.lib.sh - Bash library functions related to in- and output
 ################################################################################
 #
-# Copyright (C) 2013 stepping stone GmbH
-#                    Bern, Switzerland
-#                    http://www.stepping-stone.ch
-#                    support@stepping-stone.ch
+# Copyright (C) 2013 - 2015 stepping stone GmbH
+#                           Bern, Switzerland
+#                           http://www.stepping-stone.ch
+#                           support@stepping-stone.ch
 #
 # Authors:
 #   Christian Affolter <christian.affolter@stepping-stone.ch>
@@ -172,4 +172,20 @@ function debug ()
     fi
 
     logAndPrint "${FUNCNAME[1]}: ${message}" "$tag" 'debug' 'user'
+}
+
+# Reads user input into variable
+#
+# Prints an input prompt and reads the user input into a variable given by
+# <VARIABLE-NAME>. Optionally, a default value can be passed or set in the
+# global scope as IO_DEFAULT_<VARIABLE-NAME>.
+# 
+# ioReadInputVar <VARIABLE-NAME> [<PROMPT-PREFIX> [<DEFAULT-VALUE>]]
+function ioReadInputVar() {
+    local varName="${1}"
+    local inputPrompt="${2}"
+    local defaultVarName="IO_DEFAULT_${varName}"
+    local defaultValue="${3:-${!defaultVarName}}"
+
+    read -e -p "${inputPrompt}: " -i "${defaultValue}" "${varName}"
 }
