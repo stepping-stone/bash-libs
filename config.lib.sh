@@ -55,9 +55,11 @@ function configLoadConfig ()
 function configIsParameterValuePresent ()
 {
     local parameterName="$1"
-    local parameterValue="$( eval echo \$${parameterName} )"
-
     debug "Check if parameter '${parameterName}' is present"
+
+    local parameterValue="${!parameterName}"
+    debug "Value of ${parameterName}: '${parameterValue}'"
+
     test -n "$parameterValue"
     return $?
 }
